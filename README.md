@@ -8,9 +8,13 @@
 
 synchronize cache data using elegant syntax!
 
+###### Install
+```bash
+    composer require mvaliolahi/cache-sync
+```
+
 ###### Setup
 ```php            
-
     $cacheSync =  new CacheSync(ArrayDriver::class);
 ```            
 
@@ -58,6 +62,5 @@ synchronize cache data using elegant syntax!
             
 ###### Persis changes
 ```php  
-
     $cacheSync->persistTo('users:user.1');
 ```                        
