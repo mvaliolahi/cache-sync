@@ -15,7 +15,7 @@ synchronize cache data using elegant syntax!
 
 ###### Setup
 ```php            
-    $cacheSync =  new CacheSync(ArrayDriver::class);
+    $cacheSync = new CacheSync(ArrayDriver::class);
 ```            
 
 
