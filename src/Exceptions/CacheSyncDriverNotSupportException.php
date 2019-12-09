@@ -5,9 +5,9 @@ namespace Mvaliolahi\CacheSync\Exceptions;
 
 
 /**
- * Class CacheIsNotSupportException
+ * Class CacheSyncDriverNotSupportException
  * @package Mvaliolahi\CacheSync\Exceptions
  */
-class CacheIsNotSupportException extends \Exception
+class CacheSyncDriverNotSupportException extends \Exception
 {
 }

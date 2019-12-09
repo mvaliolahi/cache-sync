@@ -4,7 +4,8 @@
 namespace Mvaliolahi\CacheSync;
 
 
-use Mvaliolahi\CacheSync\Exceptions\CacheIsNotSupportException;
+use Mvaliolahi\CacheSync\Contracts\SyncCacheDriver;
+use Mvaliolahi\CacheSync\Exceptions\CacheSyncDriverNotSupportException;
 
 /**
  * Class CacheSync
@@ -12,6 +13,11 @@ use Mvaliolahi\CacheSync\Exceptions\CacheIsNotSupportException;
  */
 class CacheSync
 {
+    /**
+     * @var SyncCacheDriver
+     */
+    protected $driver;
+
     /**
      * @var string
      */
@@ -23,27 +29,34 @@ class CacheSync
     private $data = null;
 
     /**
-     * @param $data
-     * @return $this
-     * @throws CacheIsNotSupportException
+     * CacheSync constructor.
+     * @param SyncCacheDriver | mixed $driver
+     * @throws CacheSyncDriverNotSupportException
      */
-    public function data($data)
+    public function __construct($driver)
     {
-        $this->dataShouldBeArray($this->data = $data);
+        if (is_string($driver)) {
+            $driver = new $driver;
+        }
 
-        return $this;
+        if (!$driver instanceof SyncCacheDriver) {
+            throw  new CacheSyncDriverNotSupportException(
+                'Cache driver should implements Mvaliolahi\CacheSync\Contracts\CacheSyncDriver'
+            );
+        }
+
+        $this->driver = $driver;
     }
 
     /**
      * @param $data
-     * @return string
-     * @throws CacheIsNotSupportException
+     * @return $this
      */
-    private function dataShouldBeArray($data)
+    public function data(array $data)
     {
-        if (!is_array($data)) {
-            throw new CacheIsNotSupportException('Only array can accept by cache sync.');
-        }
+        $this->data = $data;
+
+        return $this;
     }
 
     /**
@@ -54,7 +67,13 @@ class CacheSync
     public function change($key, $given)
     {
         if ($this->isNotNested($key)) {
-            $this->data[$key] = $given;
+
+            if (is_array($given)) {
+                $this->data[$key] = array_replace($this->data[$key], $given);
+            } else {
+                $this->data[$key] = $given;
+            }
+
             return $this;
         }
 
@@ -140,15 +159,39 @@ class CacheSync
      */
     private function updateData($key, $given, $needleIndex): void
     {
-        $givenJson = json_encode($given);
+        $combinedData = array_replace(
+            eval($this->getNeedleKeys($key, "[$needleIndex]")),
+            $given
+        );
+
+        $givenJson = json_encode($combinedData);
         eval($this->getNeedleKeys($key, "[$needleIndex] =  (array)json_decode('$givenJson')"));
     }
 
     /**
-     * @return null
+     * @return array | null
      */
     public function get()
     {
         return $this->data;
+    }
+
+    /**
+     * @param $key
+     * @return CacheSync
+     */
+    public function persisTo($key)
+    {
+        $this->driver->set($key, $this->data);
+
+        return $this;
+    }
+
+    /**
+     * @return mixed|SyncCacheDriver
+     */
+    public function driver()
+    {
+        return $this->driver;
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Unit;
 
 
 use Mvaliolahi\CacheSync\CacheSync;
+use Mvaliolahi\CacheSync\Drivers\ArrayDriver;
 use Tests\TestCase;
 
 /**
@@ -23,16 +24,14 @@ class CacheSyncTest extends TestCase
             'email' => 'mvaliolahi@gmail.com',
         ];
 
-         $this->assertNotEmpty((new CacheSync)->data($data));
+         $this->assertNotEmpty((new CacheSync(ArrayDriver::class))->data($data));
     }
 
     /**
-     * @test
-     * @expectedException \Mvaliolahi\CacheSync\Exceptions\CacheIsNotSupportException
+     * @expectedException \Mvaliolahi\CacheSync\Exceptions\CacheSyncDriverNotSupportException
      */
-    public function it_should_trows_and_exception_when_object_passed()
+    public function it_Should_trow_exception_if_driver_does_not_implement_contract()
     {
-        $obj = (object)['name' => 'Meysam Valiolahi'];
-        $cacheSync = (new CacheSync)->data($obj);
+        (new CacheSync(null));
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 
 
 use Mvaliolahi\CacheSync\CacheSync;
+use Mvaliolahi\CacheSync\Drivers\ArrayDriver;
 use Tests\TestCase;
 
 /**
@@ -24,7 +25,7 @@ class CacheSyncTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->cacheSync = new CacheSync();
+        $this->cacheSync = new CacheSync(ArrayDriver::class);
     }
 
     /**
@@ -35,7 +36,7 @@ class CacheSyncTest extends TestCase
         $data = [
             'name' => 'Meysam Valiolahi',
             'email' => 'mvaliolahi@gmail.com',
-        ];;
+        ];
 
         $this->assertEquals(
             [
@@ -68,7 +69,7 @@ class CacheSyncTest extends TestCase
                     ],
                     [
                         'id' => 101,
-                        'location' => 'American'
+                        'location' => 'Dubai -4'
                     ],
                     [
                         'id' => 102,
@@ -112,9 +113,109 @@ class CacheSyncTest extends TestCase
     }
 
     /**
-     * @skip
+     * @test
      */
-    public function it_should_persist_modified_data_using_cache_key()
+    public function it_should_replace_specific_field_for_nested_key()
     {
+        $data = [
+            'data' => [
+                'houses' => [
+                    'records' => [
+                        'trends' => [
+                            [
+                                'id' => 1,
+                                'city' => 'Tehran'
+                            ],
+                            [
+                                'id' => 2,
+                                'city' => 'Borujerd',
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $this->assertEquals(
+            [
+                'data' => [
+                    'houses' => [
+                        'records' => [
+                            'trends' => [
+                                [
+                                    'id' => 1,
+                                    'city' => 'Yazd',
+                                ],
+                                [
+                                    'id' => 2,
+                                    'city' => 'Borujerd',
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            $this->cacheSync->data($data)
+                ->change('data.houses.records.trends@city=Tehran', [
+                    'city' => 'Yazd',
+                ])
+                ->get()
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_should_replace_specific_field_for_single_key()
+    {
+        $data = [
+            'name' => 'Meysam Valiolahi',
+            'favorites' => [
+                'Book',
+                'Music',
+            ],
+        ];
+
+        $this->assertEquals(
+            [
+                'name' => 'Meysam Valiolahi',
+                'favorites' => [
+                    'Programming',
+                    'Music',
+                ],
+            ],
+            $this->cacheSync->data($data)
+                ->change('favorites', [
+                    'Programming'
+                ])
+                ->get()
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_should_persist_data_after_changed()
+    {
+        $data = [
+            'name' => 'Meysam Valiolahi',
+            'age'  => 28,
+        ];
+
+        $this->cacheSync
+            ->data($data)
+            ->change('name', 'Sohrab Valiolahi')
+            ->change('age', 2)
+            ->persisTo('users:user.1');
+
+        $this->assertEquals(
+            [
+                'name' => 'Sohrab Valiolahi',
+                'age'  => 2
+            ],
+            $this->cacheSync
+                ->driver()
+                ->get('users:user.1')
+        );
     }
 }
